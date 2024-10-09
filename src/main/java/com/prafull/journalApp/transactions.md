@@ -22,15 +22,19 @@ are executed within a transaction context. If any exception occurs, the transact
 In your `JournalEntryService` class, the `saveEntry` method is annotated with `@Transactional`:
 
 ```java
-
 @Transactional
-public void saveEntry(JournalEntry entry, String username) {
+public void saveEntry(JournalEntry entry, String username) throws Exception {
+  try {
     entry.setDate(LocalDateTime.now());
     User user = userService.getUserByUsername(username);
     JournalEntry savedEntry = repo.save(entry);
     user.getJournalEntries().add(savedEntry);
     userService.saveUser(user);
     repo.save(entry);
+  } catch (Exception e) {
+    e.printStackTrace();
+    throw e;
+  }
 }
 ```
 
@@ -48,10 +52,10 @@ public class JournalAppApplication {
         SpringApplication.run(JournalAppApplication.class, args);
     }
 
-    @Bean
-    public PlatformTransactionManager transactionManager(MongoDatabaseFactory dbFactory) {
-        return null;
-    }
+  @Bean
+  public PlatformTransactionManager transactionManager(MongoDatabaseFactory dbFactory) {
+    return new MongoTransactionManager(dbFactory);
+  }
 }
 ```
 

@@ -13,12 +13,12 @@ import java.util.List;
 import java.util.Optional;
 
 // controller -> service -> repository
+
 /**
- *   @Transactional annotation is used to manage transactions in Spring.
- *   It ensures that the methods annotated with it are executed within a transaction context.
- *   If any exception occurs, the transaction will be rolled back.
- *
- * */
+ * @Transactional annotation is used to manage transactions in Spring.
+ * It ensures that the methods annotated with it are executed within a transaction context.
+ * If any exception occurs, the transaction will be rolled back.
+ */
 @Component
 public class JournalEntryService {
 
@@ -29,13 +29,18 @@ public class JournalEntryService {
     private UserService userService;
 
     @Transactional
-    public void saveEntry(JournalEntry entry, String username) {
-        entry.setDate(LocalDateTime.now());
-        User user = userService.getUserByUsername(username);
-        JournalEntry savedEntry = repo.save(entry);
-        user.getJournalEntries().add(savedEntry);
-        userService.saveUser(user);
-        repo.save(entry);
+    public void saveEntry(JournalEntry entry, String username) throws Exception {
+        try {
+            entry.setDate(LocalDateTime.now());
+            User user = userService.getUserByUsername(username);
+            JournalEntry savedEntry = repo.save(entry);
+            user.getJournalEntries().add(savedEntry);
+            userService.saveUser(user);
+            repo.save(entry);
+        } catch (Exception e) {
+            e.printStackTrace();
+            throw e;
+        }
     }
 
     public List<JournalEntry> getAll() {

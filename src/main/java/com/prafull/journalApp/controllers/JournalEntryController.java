@@ -33,7 +33,6 @@ public class JournalEntryController {
 
     @PostMapping("{username}")
     public ResponseEntity<JournalEntry> createEntry(@RequestBody JournalEntry entry, @PathVariable String username) {
-        System.out.println(username);
         try {
             service.saveEntry(entry, username);
             return new ResponseEntity<>(entry, HttpStatus.CREATED);
@@ -63,14 +62,20 @@ public class JournalEntryController {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).body("No user found with username: " + username);
         }
     }
+
     @PostMapping("/{id}/{username}")
     public ResponseEntity<?> updateEntry(@RequestBody JournalEntry entry, @PathVariable ObjectId id, @PathVariable String username) {
-        JournalEntry old = service.getSingle(id);
-        if (old != null) {
-            old.setTitle(!entry.getTitle().isEmpty() ? entry.getTitle() : old.getTitle());
-            old.setContent(!entry.getContent().isEmpty() ? entry.getContent() : old.getContent());
-            service.saveEntry(old, username);
+        try {
+            JournalEntry old = service.getSingle(id);
+            if (old != null) {
+                old.setTitle(!entry.getTitle().isEmpty() ? entry.getTitle() : old.getTitle());
+                old.setContent(!entry.getContent().isEmpty() ? entry.getContent() : old.getContent());
+                service.saveEntry(old, username);
+            }
+            return ResponseEntity.ok(old);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body("An error occurred while updating the entry.");
         }
-        return ResponseEntity.ok(old);
     }
 }
