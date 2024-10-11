@@ -29,7 +29,7 @@ import java.util.List;
 
 @Document(collection = "users")
 @Data
-public class User {
+public class UserEntity {
 
     @Id
     private ObjectId id;
@@ -42,6 +42,8 @@ public class User {
 
     @DBRef
     private List<JournalEntry> journalEntries = new ArrayList<>();
+
+    private List<String> roles;
 }
 /*
 @DBRef annotation is used to create a reference to another document

@@ -1,7 +1,7 @@
 package com.prafull.journalApp.service;
 
 import com.prafull.journalApp.entities.JournalEntry;
-import com.prafull.journalApp.entities.User;
+import com.prafull.journalApp.entities.UserEntity;
 import com.prafull.journalApp.repository.JournalEntryRepo;
 import org.bson.types.ObjectId;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -32,10 +32,14 @@ public class JournalEntryService {
     public void saveEntry(JournalEntry entry, String username) throws Exception {
         try {
             entry.setDate(LocalDateTime.now());
-            User user = userService.getUserByUsername(username);
+            UserEntity userEntity = userService.getUserByUsername(username);
             JournalEntry savedEntry = repo.save(entry);
-            user.getJournalEntries().add(savedEntry);
-            userService.saveUser(user);
+            userEntity.getJournalEntries().stream().filter(e -> e.getId().equals(entry.getId())).findFirst().ifPresent(e -> {
+                e.setTitle(savedEntry.getTitle());
+                e.setContent(savedEntry.getContent());
+                e.setDate(savedEntry.getDate());
+            });
+            userService.saveUser(userEntity);
             repo.save(entry);
         } catch (Exception e) {
             e.printStackTrace();
@@ -47,15 +51,22 @@ public class JournalEntryService {
         return repo.findAll();
     }
 
-    public JournalEntry getSingle(ObjectId id) {
-        Optional<JournalEntry> find = repo.findById(id);
+    public JournalEntry getSingle(ObjectId id, String username) {
+        UserEntity userEntity = userService.getUserByUsername(username);
+        Optional<JournalEntry> find = userEntity.getJournalEntries().stream().filter(entry -> entry.getId().equals(id)).findFirst();
         return find.orElse(null);
     }
 
-    public void deleteById(ObjectId id, String username) {
-        User user = userService.getUserByUsername(username);
-        user.getJournalEntries().removeIf(entry -> entry.getId().equals(id));
-        userService.saveUser(user);
-        repo.deleteById(id);
+    @Transactional
+    public Boolean deleteById(ObjectId id, String username) {
+        UserEntity userEntity = userService.getUserByUsername(username);
+        boolean removed = userEntity.getJournalEntries().removeIf(entry -> entry.getId().equals(id));
+        if (removed) {
+            userService.saveUser(userEntity);
+            repo.deleteById(id);
+            return true;
+        } else {
+            return false;
+        }
     }
 }
